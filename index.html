@@ -1,6 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Overlay for rotation message */
+    #rotateMessage {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #222;
+      color: #fff;
+      z-index: 9999;
+      display: none; /* Hidden by default */
+      justify-content: center;
+      align-items: center;
+      font-size: 24px;
+      text-align: center;
+      padding: 20px;
+    }
+  </style>
+  <title>Rotate ur device</title>
+</head>
+<body>
+  <!-- Overlay that appears if in portrait -->
+  <div id="rotateMessage">
+    rotate ur screen to landscape or u cant play
+  </div>
+
+  <script>
+    function checkOrientation() {
+      // If width is less than height, it's in portrait mode.
+      if (window.innerWidth < window.innerHeight) {
+        document.getElementById('rotateMessage').style.display = 'flex';
+      } else {
+        document.getElementById('rotateMessage').style.display = 'none';
+      }
+    }
+
+    // Listen for resize and orientation change events.
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    
+    // Initial check
+    checkOrientation();
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Battle Cats HTML</title>
