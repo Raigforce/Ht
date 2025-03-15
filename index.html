@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Battle Cats HTML</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    #gameContainer {
+      position: relative;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      border: 2px solid #000;
+    }
+    #controls,
+    #customCat {
+      margin: 20px;
+    }
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      margin: 5px;
+    }
+    input {
+      padding: 5px;
+      margin: 5px;
+    }
+    #catPreview {
+      margin: 10px auto;
+      padding: 10px;
+      border: 1px solid #ccc;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Battle Cats - HTML Edition</h1>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+  </div>
+  <div id="controls">
+    <button onclick="spawnCat()">Spawn Cat ($<span id="catCost">50</span>)</button>
+    <button onclick="spawnCustomCat()">Spawn Custom Cat ($<span id="customCatCost">100</span>)</button>
+    <button onclick="upgradeEconomy()">Upgrade Wallet ($<span id="upgradeCost">100</span>)</button>
+    <p>
+      Money: $<span id="moneyDisplay">100</span> | Income: $<span id="incomeDisplay">10</span>/sec | Level:
+      <span id="levelDisplay">1</span>
+    </p>
+  </div>
+
+  <h2>Create Your Own Cat</h2>
+  <div id="customCat">
+    <input type="text" id="catName" placeholder="Cat Name" />
+    <input type="number" id="catDamage" placeholder="Damage" value="5" />
+    <input type="number" id="catRange" placeholder="Range (50-200)" value="100" />
+    <input type="color" id="catColor" value="#ffffff" />
+    <button onclick="saveCustomCat()">Save Custom Cat</button>
+    <div id="catPreview">Preview: Custom Cat</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let money = 100;
+    let income = 10;
+    let upgradeCost = 100;
+    let catCost = 50;
+    let customCatCost = 100;
+    let level = 1;
+    let baseHP = { player: 200, enemy: 200 };
+    let cats = [];
+    let enemies = [];
+
+    // Background colors for levels
+    const backgrounds = [
+      "#ADD8E6", // lightblue
+      "#90EE90", // lightgreen
+      "#FFFFE0", // lightyellow
+      "#F08080", // lightcoral
+      "#E6E6FA", // lavender
+      "#D3D3D3"  // lightgray
+    ];
+
+    // Default custom cat settings
+    let customCat = { name: "Custom Cat", damage: 5, range: 100, color: "#ffffff" };
+
+    // Define enemy types
+    const enemyTypes = [
+      { type: "normal", hp: 100, speed: 1, damage: 2, range: 50, color: "black", attackCooldown: 800 },
+      { type: "fast", hp: 70, speed: 2, damage: 2, range: 50, color: "purple", attackCooldown: 800 },
+      { type: "tank", hp: 150, speed: 0.5, damage: 4, range: 50, color: "darkred", attackCooldown: 800 }
+    ];
+
+    function updateMoney() {
+      document.getElementById("moneyDisplay").innerText = money;
+      document.getElementById("incomeDisplay").innerText = income;
+      document.getElementById("upgradeCost").innerText = upgradeCost;
+      document.getElementById("catCost").innerText = catCost;
+      document.getElementById("customCatCost").innerText = customCatCost;
+      document.getElementById("levelDisplay").innerText = level;
+    }
+
+    function spawnCat() {
+      if (money >= catCost) {
+        cats.push({
+          x: 100,
+          y: 250,
+          hp: 50,
+          speed: 1.5,
+          range: 100,
+          damage: 5,
+          color: "white",
+          name: "Default Cat",
+          attackCooldown: 500, // cooldown in ms
+          attackTimer: 0
+        });
+        money -= catCost;
+        updateMoney();
+      }
+    }
+
+    function spawnCustomCat() {
+      if (money >= customCatCost) {
+        cats.push({
+          x: 100,
+          y: 250,
+          hp: 50,
+          speed: 1.5,
+          range: customCat.range,
+          damage: customCat.damage,
+          color: customCat.color,
+          name: customCat.name,
+          attackCooldown: 500,
+          attackTimer: 0
+        });
+        money -= customCatCost;
+        updateMoney();
+      }
+    }
+
+    function upgradeEconomy() {
+      if (money >= upgradeCost) {
+        money -= upgradeCost;
+        income += 5;
+        upgradeCost += 50; // Scaling upgrade cost
+        updateMoney();
+      }
+    }
+
+    function saveCustomCat() {
+      customCat.name = document.getElementById("catName").value || "Custom Cat";
+      customCat.damage = parseInt(document.getElementById("catDamage").value) || 5;
+      customCat.range = Math.min(Math.max(parseInt(document.getElementById("catRange").value), 50), 200);
+      customCat.color = document.getElementById("catColor").value;
+      updatePreview();
+      alert(`${customCat.name} saved!`);
+    }
+
+    // Update preview UI for custom cat
+    function updatePreview() {
+      const preview = document.getElementById("catPreview");
+      preview.innerHTML = `<strong>${customCat.name}</strong><br>Damage: ${customCat.damage}<br>Range: ${customCat.range}`;
+      preview.style.backgroundColor = customCat.color;
+    }
+
+    // Event listeners for live preview updates
+    document.getElementById("catName").addEventListener("input", updatePreview);
+    document.getElementById("catDamage").addEventListener("input", updatePreview);
+    document.getElementById("catRange").addEventListener("input", updatePreview);
+    document.getElementById("catColor").addEventListener("input", updatePreview);
+
+    // Spawn a random enemy adjusted for level difficulty
+    function spawnEnemy() {
+      const randomType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+      const multiplier = 1 + (level - 1) * 0.2; // Increase hp and damage per level
+      const enemy = {
+        x: 750,
+        y: 250,
+        hp: randomType.hp * multiplier,
+        speed: randomType.speed,
+        damage: randomType.damage * multiplier,
+        range: randomType.range,
+        color: randomType.color,
+        type: randomType.type,
+        attackCooldown: randomType.attackCooldown,
+        attackTimer: 0
+      };
+      enemies.push(enemy);
+    }
+
+    // Advance to the next level
+    function nextLevel() {
+      level++;
+      baseHP.enemy = 200;
+      baseHP.player = 200;
+      cats = [];
+      enemies = [];
+      alert(`Level complete! Welcome to level ${level}!`);
+      updateMoney();
+    }
+
+    function update() {
+      // Draw dynamic background based on level
+      const bgColor = backgrounds[(level - 1) % backgrounds.length];
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw player and enemy bases
+      ctx.fillStyle = "blue";
+      ctx.fillRect(50, 200, 50, 100);
+      ctx.fillStyle = "red";
+      ctx.fillRect(750, 200, 50, 100);
+
+      // Display bases' HP
+      ctx.fillStyle = "black";
+      ctx.font = "16px Arial";
+      ctx.fillText(`HP: ${Math.floor(baseHP.player)}`, 50, 190);
+      ctx.fillText(`HP: ${Math.floor(baseHP.enemy)}`, 750, 190);
+
+      // Update and draw cats
+      cats.forEach(cat => {
+        // Decrement attack timer
+        if (cat.attackTimer > 0) {
+          cat.attackTimer -= 16; // approx. ms per frame
+        }
+        ctx.fillStyle = cat.color;
+        ctx.fillRect(cat.x, cat.y, 30, 30);
+        let targetEnemy = enemies.find(e => (e.x - cat.x) <= cat.range && (e.x - cat.x) > 0);
+        if (targetEnemy) {
+          if (cat.attackTimer <= 0) {
+            targetEnemy.hp -= cat.damage;
+            cat.attackTimer = cat.attackCooldown;
+          }
+        } else if (cat.x < 700) {
+          cat.x += cat.speed;
+        } else {
+          baseHP.enemy -= 0.1;
+        }
+      });
+      cats = cats.filter(cat => cat.hp > 0);
+
+      // Update and draw enemies
+      enemies.forEach(enemy => {
+        if (enemy.attackTimer > 0) {
+          enemy.attackTimer -= 16;
+        }
+        ctx.fillStyle = enemy.color;
+        ctx.fillRect(enemy.x, enemy.y, 30, 30);
+        let targetCat = cats.find(c => (enemy.x - c.x) <= enemy.range && (enemy.x - c.x) > 0);
+        if (targetCat) {
+          if (enemy.attackTimer <= 0) {
+            targetCat.hp -= enemy.damage;
+            enemy.attackTimer = enemy.attackCooldown;
+          }
+        } else if (enemy.x > 100) {
+          enemy.x -= enemy.speed;
+        } else {
+          baseHP.player -= 0.1;
+        }
+      });
+      enemies = enemies.filter(enemy => enemy.hp > 0);
+
+      // Check for win or loss conditions
+      if (baseHP.player <= 0) {
+        alert("You lost! Game over. Refresh to try again.");
+        // Reset game state
+        baseHP.player = 200;
+        baseHP.enemy = 200;
+        money = 100;
+        income = 10;
+        upgradeCost = 100;
+        level = 1;
+        cats = [];
+        enemies = [];
+        updateMoney();
+      }
+
+      if (baseHP.enemy <= 0) {
+        nextLevel();
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    // Increase money every second
+    setInterval(() => {
+      money += income;
+      updateMoney();
+    }, 1000);
+
+    // Spawn enemies every 5 seconds
+    setInterval(() => {
+      spawnEnemy();
+    }, 5000);
+
+    update();
+    updatePreview();
+  </script>
+</body>
+</html>
