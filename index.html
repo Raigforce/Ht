@@ -21,48 +21,6 @@
       text-align: center;
       padding: 20px;
     }
-  </style>
-  <title>THOSE WHO KNOWS</title>
-</head>
-<body>
-  <!-- Overlay that appears if in portrait -->
-  <div id="rotateMessage">
-    rotate ur screen to landscape or u cant play
-  </div>
-
-  <script>
-    function checkOrientation() {
-      // If width is less than height, it's in portrait mode.
-      if (window.innerWidth < window.innerHeight) {
-        document.getElementById('rotateMessage').style.display = 'flex';
-      } else {
-        document.getElementById('rotateMessage').style.display = 'none';
-      }
-    }
-
-    // Listen for resize and orientation change events.
-    window.addEventListener('resize', checkOrientation);
-    window.addEventListener('orientationchange', checkOrientation);
-    
-    // Initial check
-    checkOrientation();
-  </script>
-</body>
-</html>
-
-
-
-
-
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Battle Cats HTML</title>
-  <style>
     /* Global Styles */
     * {
       margin: 0;
@@ -173,7 +131,6 @@
       padding: 0;
     }
     .spawn-cat-btn img, .spawn-cat-btn div {
-      /* Fixed size for button preview (does not depend on unit size) */
       width: 40px;
       height: 40px;
       border: 2px solid #fff;
@@ -195,13 +152,20 @@
       font-size: 14px;
     }
   </style>
+  <title>THOSE WHO KNOWS</title>
 </head>
 <body>
+  <!-- Overlay that appears if in portrait -->
+  <div id="rotateMessage">
+    rotate ur screen to landscape or u cant play
+  </div>
+
   <!-- Main Menu Screen -->
   <div id="main-menu" class="screen">
     <h1>Battle Cats - Main Menu</h1>
     <button class="menu-button" onclick="switchScreen('battle-screen')">Battle Screen</button>
     <button class="menu-button" onclick="switchScreen('units-screen')">Units</button>
+    <button class="menu-button" onclick="pullGacha()">Gacha Pull ($<span id="gachaCostDisplay"></span>)</button>
   </div>
 
   <!-- Battle Screen -->
@@ -218,6 +182,8 @@
         Money: $<span id="moneyDisplay">100</span> | Income: $<span id="incomeDisplay">10</span>/sec | Level:
         <span id="levelDisplay">1</span>
       </p>
+      <!-- XP Display -->
+      <p id="xpInfo">XP: 0 / 100 | Player Level: 1</p>
       <div id="customCatButtons">
         <!-- Custom cat spawn buttons will appear here -->
       </div>
@@ -258,30 +224,37 @@
   </div>
 
   <script>
-    // Global variable to track current screen
+    // Orientation Check
+    function checkOrientation() {
+      if (window.innerWidth < window.innerHeight) {
+        document.getElementById('rotateMessage').style.display = 'flex';
+      } else {
+        document.getElementById('rotateMessage').style.display = 'none';
+      }
+    }
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    checkOrientation();
+
+    // Global variables for screens and game loops
     let currentScreen = "main-menu";
-    // Variables for pausing/starting battle loop and intervals
     let battleAnimationId, moneyIntervalId, enemyIntervalId;
 
     function switchScreen(screenId) {
-      // If currently in battle, stop it
       if (currentScreen === "battle-screen") {
         stopBattle();
       }
-      // Hide all screens
       document.querySelectorAll('.screen').forEach(screen => {
         screen.classList.add('hidden');
       });
-      // Show selected screen
       document.getElementById(screenId).classList.remove('hidden');
       currentScreen = screenId;
-      // If switching to battle, start the battle loop
       if (screenId === "battle-screen") {
         startBattle();
       }
     }
 
-    // Battle control functions: start and stop the battle loop and intervals.
+    // Start and Stop Battle Loop
     function startBattle() {
       updateMoney();
       battleAnimationId = requestAnimationFrame(update);
@@ -300,32 +273,38 @@
       clearInterval(enemyIntervalId);
     }
 
-    // Game Variables and Elements
+    // Game Variables
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    const groundLevel = 250;  // Define a ground level
+    const groundLevel = 250;
 
     let money = 100;
     let income = 10;
     let upgradeCost = 100;
     let catCost = 50;
-    let level = 1;
+    let level = 1; // Battle level
     let baseHP = { player: 200, enemy: 200 };
     let cats = [];
     let enemies = [];
     let customCats = [];
 
+    // New Global Variables for XP System and Gacha
+    let playerXP = 0;
+    let xpForNextLevel = 100;
+    let playerLevel = 1; // Player progression level
+    let gachaCost = 200;
+
     // Background Colors for Levels
     const backgrounds = [
-      "#ADD8E6", // lightblue
-      "#90EE90", // lightgreen
-      "#FFFFE0", // lightyellow
-      "#F08080", // lightcoral
-      "#E6E6FA", // lavender
-      "#D3D3D3"  // lightgray
+      "#ADD8E6",
+      "#90EE90",
+      "#FFFFE0",
+      "#F08080",
+      "#E6E6FA",
+      "#D3D3D3"
     ];
 
-    // Cache for Weapon Images
+    // Weapon Image Cache
     let weaponImageCache = {};
     function getWeaponImage(src) {
       if (weaponImageCache[src]) return weaponImageCache[src];
@@ -348,6 +327,22 @@
       }
     }
 
+    // XP System Functions
+    function gainXP(amount) {
+      playerXP += amount;
+      while (playerXP >= xpForNextLevel) {
+        playerXP -= xpForNextLevel;
+        playerLevel++;
+        xpForNextLevel = Math.floor(xpForNextLevel * 1.2);
+        alert(`Level up! You're now player level ${playerLevel}!`);
+      }
+      updateXPDisplay();
+    }
+
+    function updateXPDisplay() {
+      document.getElementById("xpInfo").innerText = `XP: ${playerXP} / ${xpForNextLevel} | Player Level: ${playerLevel}`;
+    }
+
     // Update UI Displays
     function updateMoney() {
       document.getElementById("moneyDisplay").innerText = money;
@@ -355,15 +350,17 @@
       document.getElementById("upgradeCost").innerText = upgradeCost;
       document.getElementById("catCost").innerText = catCost;
       document.getElementById("levelDisplay").innerText = level;
+      if(document.getElementById("gachaCostDisplay")){
+        document.getElementById("gachaCostDisplay").innerText = gachaCost;
+      }
     }
 
-    // Spawn a Default Cat (using a fixed size for display in battle)
+    // Spawn a Default Cat
     function spawnCat() {
       if (money >= catCost) {
         cats.push({
           x: 100,
-          // Instead of using a fixed y, we compute so the bottom aligns with groundLevel
-          y: groundLevel,  
+          y: groundLevel,
           hp: 50,
           speed: 1.5,
           range: 100,
@@ -380,13 +377,13 @@
       }
     }
 
-    // Spawn a Custom Cat from Saved CustomCats Array
+    // Spawn a Custom Cat
     function spawnCustomCat(index) {
       let customCat = customCats[index];
       if (money >= customCat.deployPrice) {
         cats.push({
           x: 100,
-          y: groundLevel,  
+          y: groundLevel,
           hp: customCat.health,
           speed: 1.5,
           range: customCat.range,
@@ -415,7 +412,7 @@
       }
     }
 
-    // Save a New Custom Cat (max 5)
+    // Save a New Custom Cat
     function saveCustomCat() {
       if (customCats.length >= 5) {
         alert("Maximum of 5 custom cats reached. Remove one to add a new cat.");
@@ -481,7 +478,7 @@
       }
     }
 
-    // Update Custom Cat Buttons Area with revamped layout
+    // Update Custom Cat Buttons Area
     function updateCustomCatButtons() {
       const container = document.getElementById("customCatButtons");
       container.innerHTML = "";
@@ -489,7 +486,7 @@
         let entry = document.createElement("div");
         entry.className = "custom-cat-entry";
         
-        // Spawn button: fixed 40px size regardless of unit size
+        // Spawn button
         let spawnBtn = document.createElement("button");
         spawnBtn.className = "spawn-cat-btn";
         spawnBtn.onclick = function () {
@@ -521,13 +518,13 @@
       });
     }
 
-    // Remove a Custom Cat from the Array
+    // Remove a Custom Cat
     function removeCustomCat(index) {
       customCats.splice(index, 1);
       updateCustomCatButtons();
     }
 
-    // Spawn a Regular Enemy (Stats Scale with Level)
+    // Spawn a Regular Enemy
     function spawnEnemy() {
       const enemyTypes = [
         { type: "normal", hp: 100, speed: 1, damage: 2, range: 50, color: "black", attackCooldown: 800 },
@@ -538,7 +535,7 @@
       const multiplier = 1 + (level - 1) * 0.2;
       const enemy = {
         x: 750,
-        y: groundLevel - 30, // enemy drawn so its bottom aligns with ground
+        y: groundLevel - 30,
         hp: randomType.hp * multiplier,
         speed: randomType.speed,
         damage: randomType.damage * multiplier,
@@ -546,12 +543,13 @@
         color: randomType.color,
         type: randomType.type,
         attackCooldown: randomType.attackCooldown,
-        attackTimer: 0
+        attackTimer: 0,
+        xpAwarded: false
       };
       enemies.push(enemy);
     }
 
-    // Spawn a Boss Enemy (Every 5 Levels)
+    // Spawn a Boss Enemy
     function spawnBoss() {
       const multiplier = 1 + (level - 1) * 0.3;
       const boss = {
@@ -564,12 +562,13 @@
         color: "gold",
         type: "boss",
         attackCooldown: 1500,
-        attackTimer: 0
+        attackTimer: 0,
+        xpAwarded: false
       };
       enemies.push(boss);
     }
 
-    // Advance to the Next Level (Spawn Boss Every 5 Levels)
+    // Next Level Function
     function nextLevel() {
       level++;
       baseHP.enemy = 200;
@@ -581,6 +580,28 @@
       }
       alert(`Level complete! Welcome to level ${level}!`);
       updateMoney();
+    }
+
+    // Gacha System: Pull a random cat and add to customCats
+    function pullGacha() {
+      if (money < gachaCost) {
+        alert("Not enough money for a Gacha pull!");
+        return;
+      }
+      money -= gachaCost;
+      updateMoney();
+      let rand = Math.random();
+      let newCat;
+      if (rand < 0.6) {
+         newCat = { name: "Common Cat", damage: 5, range: 100, attackCooldown: 500, health: 50, deployPrice: 100, size: 30, color: "#ffffff", weaponImage: null, rarity: "Common" };
+      } else if (rand < 0.9) {
+         newCat = { name: "Rare Cat", damage: 8, range: 110, attackCooldown: 450, health: 70, deployPrice: 150, size: 35, color: "#FFD700", weaponImage: null, rarity: "Rare" };
+      } else {
+         newCat = { name: "Epic Cat", damage: 12, range: 120, attackCooldown: 400, health: 90, deployPrice: 200, size: 40, color: "#FF4500", weaponImage: null, rarity: "Epic" };
+      }
+      customCats.push(newCat);
+      updateCustomCatButtons();
+      alert(`Gacha pull successful! You got a ${newCat.rarity} Cat: ${newCat.name}`);
     }
 
     // Main Update Loop (Battle Logic)
@@ -606,7 +627,6 @@
           cat.attackTimer -= 16;
         }
         let catSize = cat.size || 30;
-        // Draw cat so its bottom edge aligns with groundLevel
         let drawY = groundLevel - catSize;
         if (cat.weaponImage) {
           let img = getWeaponImage(cat.weaponImage);
@@ -643,7 +663,6 @@
         if (enemy.attackTimer > 0) {
           enemy.attackTimer -= 16;
         }
-        // For enemy, assume a fixed size of 30 for drawing
         ctx.fillStyle = enemy.color;
         ctx.fillRect(enemy.x, enemy.y, 30, 30);
         ctx.fillStyle = "black";
@@ -660,6 +679,22 @@
           enemy.x -= enemy.speed;
         } else {
           baseHP.player -= 0.1;
+        }
+      });
+
+      // Award XP for defeated enemies (only once)
+      enemies.forEach(enemy => {
+        if (enemy.hp <= 0 && !enemy.xpAwarded) {
+          let xpGain = 10;
+          if (enemy.type === "boss") {
+            xpGain = 50;
+          } else if (enemy.type === "fast") {
+            xpGain = 15;
+          } else if (enemy.type === "tank") {
+            xpGain = 20;
+          }
+          gainXP(xpGain);
+          enemy.xpAwarded = true;
         }
       });
       enemies = enemies.filter(enemy => enemy.hp > 0);
