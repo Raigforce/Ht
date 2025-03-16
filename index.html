@@ -581,28 +581,46 @@
       alert(`Level complete! Welcome to level ${level}!`);
       updateMoney();
     }
+// Define arrays of cats for each rarity
+const commonCatsList = [
+  { name: "Common Cat A", damage: 5, range: 100, attackCooldown: 500, health: 50, deployPrice: 100, size: 30, color: "#ffffff", weaponImage: null, rarity: "Common" },
+  { name: "Hobo", damage: 6, range: 105, attackCooldown: 500, health: 55, deployPrice: 110, size: 30, color: "#f0f0f0", weaponImage: "https://media-hosting.imagekit.io//61a4e6acb4854540/IMG_9332.png?Expires=1836702704&Key-Pair-Id=K2ZIVPTIP2VGHC&Signature=F~-QtprtV44W--9Jjqvg804yaxzSInJNmF8jCIpenKJGJiYBGhYwKpzFTsq8MYNkqUxmL7bJQOTf~rQwt-PXqg1XuPJifHGOCP-6Ljkcm06y0VMEwx~E04CRJXWaeyUYky1Z1fQ9TQ9QrE-EEEP0z90rw-FZiEccJrTT-5KQMBceshJ-PYctzwI6Lv1eRZCm0pJCHnZXN92J2sd7~mmIP43qb8Wt7i9NqLgxvVc60w7xWMjn7XixHX9nuvddGEjuhDa5ITaVyNQ1S2jNDi1afqpm5S8ImUUzP~JjmVtUAuoUuwc84~ukE8pV8dZ9iECJxIo-EgQOTg1n12Ljhy2fBA__", rarity: "Common" }
+];
 
-    // Gacha System: Pull a random cat and add to customCats
-    function pullGacha() {
-      if (money < gachaCost) {
-        alert("Not enough money for a Gacha pull!");
-        return;
-      }
-      money -= gachaCost;
-      updateMoney();
-      let rand = Math.random();
-      let newCat;
-      if (rand < 0.6) {
-         newCat = { name: "Common Cat", damage: 5, range: 100, attackCooldown: 500, health: 50, deployPrice: 100, size: 30, color: "#ffffff", weaponImage: null, rarity: "Common" };
-      } else if (rand < 0.9) {
-         newCat = { name: "Rare Cat", damage: 8, range: 110, attackCooldown: 450, health: 70, deployPrice: 150, size: 35, color: "#FFD700", weaponImage: null, rarity: "Rare" };
-      } else {
-         newCat = { name: "Epic Cat", damage: 12, range: 120, attackCooldown: 400, health: 90, deployPrice: 200, size: 40, color: "#FF4500", weaponImage: null, rarity: "Epic" };
-      }
-      customCats.push(newCat);
-      updateCustomCatButtons();
-      alert(`Gacha pull successful! You got a ${newCat.rarity} Cat: ${newCat.name}`);
-    }
+const rareCatsList = [
+  { name: "Rare Cat A", damage: 8, range: 110, attackCooldown: 450, health: 70, deployPrice: 150, size: 35, color: "#FFD700", weaponImage: null, rarity: "Rare" },
+  { name: "Rare Cat B", damage: 9, range: 115, attackCooldown: 450, health: 75, deployPrice: 155, size: 35, color: "#FFEC8B", weaponImage: null, rarity: "Rare" }
+];
+
+const epicCatsList = [
+  { name: "Epic Cat", damage: 12, range: 120, attackCooldown: 400, health: 90, deployPrice: 200, size: 40, color: "#FF4500", weaponImage: null, rarity: "Epic" },
+  { name: "SIGMA", damage: 20, range: 50, attackCooldown: 1500, health: 160, deployPrice: 400, size: 50, color: "#66FFFF", weaponImage: null, rarity: "Epic" }
+];
+
+function pullGacha() {
+  if (money < gachaCost) {
+    alert("Not enough money for a Gacha pull!");
+    return;
+  }
+  money -= gachaCost;
+  updateMoney();
+  let rand = Math.random();
+  let newCat;
+  if (rand < 0.6) {
+    // Select a random common cat
+    newCat = commonCatsList[Math.floor(Math.random() * commonCatsList.length)];
+  } else if (rand < 0.9) {
+    // Select a random rare cat
+    newCat = rareCatsList[Math.floor(Math.random() * rareCatsList.length)];
+  } else {
+    // Select a random epic cat
+    newCat = epicCatsList[Math.floor(Math.random() * epicCatsList.length)];
+  }
+  customCats.push(newCat);
+  updateCustomCatButtons();
+  alert(`Gacha pull successful! You got a ${newCat.rarity} Cat: ${newCat.name}`);
+}
+
 
     // Main Update Loop (Battle Logic)
     function update() {
