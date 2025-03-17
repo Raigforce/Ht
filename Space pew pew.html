@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Space Shooter</title>
+  <style>
+    body { 
+      margin: 0; 
+      padding: 0; 
+      background: #000; 
+      display: flex; 
+      flex-direction: column;
+      align-items: center; 
+      justify-content: center;
+      height: 100vh; 
+    }
+    canvas { 
+      background: #111; 
+      display: block; 
+    }
+    #controls {
+      margin-top: 10px;
+      display: flex;
+      gap: 20px;
+    }
+    #controls button {
+      background: #6a11cb;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    #controls button:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="shooterCanvas" width="480" height="640"></canvas>
+  <div id="controls">
+    <button id="leftBtn">Left</button>
+    <button id="shootBtn">Shoot</button>
+    <button id="rightBtn">Right</button>
+  </div>
+  <script>
+    const canvas = document.getElementById("shooterCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let ship = { x: canvas.width / 2, y: canvas.height - 40, width: 40, height: 20, speed: 5 };
+    let bullets = [];
+    let enemies = [];
+    let enemySpawnInterval = 1000;
+    let lastEnemySpawn = 0;
+    let keys = {};
+
+    // PC Controls for movement and shooting
+    document.addEventListener("keydown", e => { keys[e.key] = true; });
+    document.addEventListener("keyup", e => { keys[e.key] = false; });
+
+    // On-screen button controls for mobile
+    document.getElementById("leftBtn").addEventListener("touchstart", e => {
+      e.preventDefault();
+      keys["ArrowLeft"] = true;
+    });
+    document.getElementById("leftBtn").addEventListener("touchend", e => {
+      e.preventDefault();
+      keys["ArrowLeft"] = false;
+    });
+    document.getElementById("rightBtn").addEventListener("touchstart", e => {
+      e.preventDefault();
+      keys["ArrowRight"] = true;
+    });
+    document.getElementById("rightBtn").addEventListener("touchend", e => {
+      e.preventDefault();
+      keys["ArrowRight"] = false;
+    });
+    document.getElementById("shootBtn").addEventListener("touchstart", e => {
+      e.preventDefault();
+      shootBullet();
+    });
+
+    function spawnEnemy() {
+      let enemy = { 
+        x: Math.random() * (canvas.width - 30), 
+        y: -30, 
+        width: 30, 
+        height: 20, 
+        speed: 2 
+      };
+      enemies.push(enemy);
+    }
+
+    function update() {
+      // PC movement controls
+      if (keys["ArrowLeft"] && ship.x > 0) ship.x -= ship.speed;
+      if (keys["ArrowRight"] && ship.x < canvas.width - ship.width) ship.x += ship.speed;
+      // Auto-shoot if space pressed (PC)
+      if (keys[" "] && canShoot()) shootBullet();
+
+      // Update bullets
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        bullets[i].y -= bullets[i].speed;
+        if (bullets[i].y < 0) bullets.splice(i, 1);
+      }
+
+      // Update enemies
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        enemies[i].y += enemies[i].speed;
+        if (enemies[i].y > canvas.height) enemies.splice(i, 1);
+      }
+
+      // Collision detection between bullets and enemies
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        for (let j = bullets.length - 1; j >= 0; j--) {
+          if (bullets[j].x < enemies[i].x + enemies[i].width &&
+              bullets[j].x + bullets[j].width > enemies[i].x &&
+              bullets[j].y < enemies[i].y + enemies[i].height &&
+              bullets[j].y + bullets[j].height > enemies[i].y) {
+            enemies.splice(i, 1);
+            bullets.splice(j, 1);
+            break;
+          }
+        }
+      }
+
+      // Spawn enemies periodically
+      if (Date.now() - lastEnemySpawn > enemySpawnInterval) {
+        spawnEnemy();
+        lastEnemySpawn = Date.now();
+      }
+    }
+
+    let lastShotTime = 0;
+    function canShoot() {
+      let now = Date.now();
+      if (now - lastShotTime > 300) {
+        lastShotTime = now;
+        return true;
+      }
+      return false;
+    }
+
+    function shootBullet() {
+      let bullet = { 
+        x: ship.x + ship.width / 2 - 2, 
+        y: ship.y, 
+        width: 4, 
+        height: 10, 
+        speed: 7 
+      };
+      bullets.push(bullet);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Draw ship
+      ctx.fillStyle = "#0f0";
+      ctx.fillRect(ship.x, ship.y, ship.width, ship.height);
+      // Draw bullets
+      ctx.fillStyle = "#fff";
+      for (let bullet of bullets) {
+        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+      }
+      // Draw enemies
+      ctx.fillStyle = "#f00";
+      for (let enemy of enemies) {
+        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+      }
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+    gameLoop();
+  </script>
+</body>
+</html>
