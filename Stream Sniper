@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox Stream Sniper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        input {
+            padding: 10px;
+            width: 300px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px;
+            cursor: pointer;
+        }
+        #info {
+            margin-top: 20px;
+        }
+        img {
+            border-radius: 50%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Roblox Stream Sniper</h1>
+    <p>Enter a Roblox UserId or Username:</p>
+    <input type="text" id="userInput" placeholder="UserId or Username">
+    <button onclick="fetchPlayerData()">Find Player</button>
+    <div id="info"></div>
+    
+    <script>
+        async function fetchPlayerData() {
+            const userInput = document.getElementById("userInput").value;
+            if (!userInput) return;
+            
+            let userId = userInput;
+            
+            // Convert username to UserId if needed
+            if (isNaN(userInput)) {
+                const userResponse = await fetch(`https://users.roblox.com/v1/usernames/users`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ usernames: [userInput], excludeBannedUsers: true })
+                });
+                const userData = await userResponse.json();
+                if (!userData.data || userData.data.length === 0) {
+                    document.getElementById("info").innerHTML = "<p>User not found!</p>";
+                    return;
+                }
+                userId = userData.data[0].id;
+            }
+            
+            // Fetch user details
+            const response = await fetch(`https://users.roblox.com/v1/users/${userId}`);
+            const data = await response.json();
+            
+            // Fetch headshot image
+            const imageResponse = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=png`);
+            const imageData = await imageResponse.json();
+            const imageUrl = imageData.data[0]?.imageUrl || "";
+            
+            document.getElementById("info").innerHTML = `
+                <p><strong>Username:</strong> ${data.name}</p>
+                <p><strong>Display Name:</strong> ${data.displayName}</p>
+                <img src="${imageUrl}" alt="Avatar">
+                <p id="gameStatus">Checking if in-game...</p>
+            `;
+            checkIfInGame(userId);
+        }
+        
+        async function checkIfInGame(userId) {
+            const gameResponse = await fetch(`https://presence.roblox.com/v1/presence/users`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userIds: [parseInt(userId)] })
+            });
+            const gameData = await gameResponse.json();
+            const player = gameData.userPresences[0];
+            
+            if (player && player.userPresenceType === 2) { // 2 means in-game
+                document.getElementById("gameStatus").innerHTML = `
+                    <p style="color: green;">Player is in a game! <a href="https://www.roblox.com/games/${player.placeId}" target="_blank">Join Game</a></p>
+                `;
+            } else {
+                document.getElementById("gameStatus").innerHTML = `<p style="color: red;">Player is not in a game.</p>`;
+            }
+        }
+        
+        setInterval(() => {
+            const userInput = document.getElementById("userInput").value;
+            if (userInput) fetchPlayerData();
+        }, 1000);
+    </script>
+</body>
+</html>
